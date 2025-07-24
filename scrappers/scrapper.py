@@ -13,24 +13,28 @@ from tqdm import tqdm
 import json
 
 
-POST_URL = "https://www.facebook.com/share/p/16iyEt2Wi4/" 
+POST_URL = "https://www.facebook.com/share/p/173jCcXpsY/" 
 
 # --- SETUP THE BROWSER ---
 chrome_options = Options()
 # This option disables browser notifications (e.g., "Chrome is being controlled by automated test software")
 chrome_options.add_argument("--disable-notifications")
 # Optional: run in headless mode (no GUI)
-# chrome_options.add_argument("--headless")
+chrome_options.add_argument("--headless")
 
-# print("Setting up WebDriver...")
-# # Use webdriver-manager to automatically handle the driver
-# service = Service(ChromeDriverManager().install())
-# driver = webdriver.Chrome(service=service, options=chrome_options)
-# driver.implicitly_wait(10) # Implicit wait for elements to appear
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--window-size=1920,1080")
 
 print("Setting up WebDriver...")
+# # Use webdriver-manager to automatically handle the driver
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
+driver.implicitly_wait(10) # Implicit wait for elements to appear
+
+print("Setting up WebDriver...")
+#service = Service(ChromeDriverManager().install())
+#driver = webdriver.Chrome(service=service, options=chrome_options)
 wait = WebDriverWait(driver, 20)
 
 # def login():
@@ -98,8 +102,6 @@ def get_comment_count():
         """
         
         comment_texts = driver.execute_script(comment_count_script)
-        #print(f"[INFO] Number of Comments {comment_texts}")
-        print(f"[LIST] {comment_texts}")
         # For each comment_texts element, print out the mapping "number comments" if it matches the pattern
         import re
         for text in comment_texts:
@@ -120,39 +122,28 @@ def scroll_comments_container(n:int):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.3);")
     time.sleep(2)
     
-    # Try to find and scroll within the comments container
-    scroll_attempts = 0
-    current_comments=0
-    previous_comments=-1
-    while current_comments<n:
-        previous_comments=current_comments
-        # Scroll down gradually
-        driver.execute_script("window.scrollBy(0, 500);")
-        time.sleep(3)
-        
+    current_coord=[]
+    previous_coord=None
+    
+    while current_coord!=previous_coord:
+        previous_coord=current_coord
         # Also try scrolling within potential comment containers
         try:
-            driver.execute_script("""
+            current_coord=driver.execute_script("""
                 var commentContainers = document.querySelectorAll('[role="article"], div[data-testid*="comment"]');
                 if (commentContainers.length > 0) {
                     var lastContainer = commentContainers[commentContainers.length - 1];
                     lastContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    var rect = lastContainer.getBoundingClientRect();
+                    console.log('lastContainer x:', rect.x, 'y:', rect.y); // Or rect.left, rect.top
+                    console.log('lastContainer width:', rect.width, 'height:', rect.height);
+                    return [rect.x, rect.y, rect.width, rect.height];
                 }
             """)
         except Exception:
             pass
         
-        time.sleep(3)
-        
-        scroll_attempts+=1
-        
-        # Press Page Down key occasionally to trigger lazy loading
-        if scroll_attempts % 5 == 0:
-            driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
-            time.sleep(1)
-        comment_elements = driver.find_elements(By.XPATH, "//div[@role='article']")
-        current_comments=len(comment_elements)
-        print(f"[INFO] Found {current_comments}")
+        time.sleep(1.5)
 
 
 def scrape_replies(parent_comment_element):
@@ -198,17 +189,13 @@ def scrape_post_and_comments():
     time.sleep(5) # Allow page to load
 
     # --- SCROLL TO LOAD COMMENTS ---
-    number_of_comments = get_comment_count()
+    #number_of_comments = get_comment_count()
     scroll_comments_container(10)
     # --- SCRAPE THE MAIN POST ---
     post_text = ""
     try:
-        # This selector is very fragile and WILL change.
-        # You need to inspect the page to find the correct one.
         post_element = driver.find_element(By.CSS_SELECTOR, "div[data-ad-preview='message']")
         post_text = post_element.text
-        print("\n--- POST ---")
-        print(post_text)
     except NoSuchElementException:
         print("Could not find the main post text element. Selector might be outdated.")
 
@@ -229,8 +216,7 @@ def scrape_post_and_comments():
                 comment_text_elements = comment.find_elements(By.XPATH, ".//div[@dir='auto' and (contains(@style,'text-align: start;') or not(@style))]") 
 
                 commenter_name = commenter_name_element.text
-                comment_text = [comment_text_element.get_attribute('innerText') for comment_text_element in comment_text_elements ] # Use innerText for potentially better handling of nested elements like emojis
-                print(comment_text)
+                comment_text = [comment_text_element.get_attribute('innerText') for comment_text_element in comment_text_elements ]
                 # Filter out empty or irrelevant text
                 if commenter_name and comment_text:
                     comment_info = {
