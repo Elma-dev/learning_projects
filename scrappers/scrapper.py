@@ -11,31 +11,37 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from tqdm import tqdm
 import json
+#from links import scrape_page_post_links
 
 
-POST_URL = "https://www.facebook.com/share/p/173jCcXpsY/" 
+PAGE_URL = "https://www.facebook.com/jafiklblan20"
+POST_URL = "https://www.facebook.com/jafiklblan20/posts/pfbid02JCCPHznZf1AbswS5nkanBYakPWtzDNwurtCBXdnSEFLNNKoZS9Rvw2z5NZFHBcCl"
 
 # --- SETUP THE BROWSER ---
-chrome_options = Options()
-# This option disables browser notifications (e.g., "Chrome is being controlled by automated test software")
-chrome_options.add_argument("--disable-notifications")
-# Optional: run in headless mode (no GUI)
-chrome_options.add_argument("--headless")
+def setup_browser(head_mode=False):
+    chrome_options = Options()
+    # This option disables browser notifications (e.g., "Chrome is being controlled by automated test software")
+    chrome_options.add_argument("--disable-notifications")
+    # Optional: run in headless mode (no GUI)
+    if head_mode:
+        chrome_options.add_argument("--headless")
 
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
 
-print("Setting up WebDriver...")
-# # Use webdriver-manager to automatically handle the driver
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
-driver.implicitly_wait(10) # Implicit wait for elements to appear
+    print("Setting up WebDriver...")
+    # # Use webdriver-manager to automatically handle the driver
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.implicitly_wait(10) # Implicit wait for elements to appear
 
-print("Setting up WebDriver...")
-#service = Service(ChromeDriverManager().install())
-#driver = webdriver.Chrome(service=service, options=chrome_options)
-wait = WebDriverWait(driver, 20)
+    print("Setting up WebDriver...")
+    #service = Service(ChromeDriverManager().install())
+    #driver = webdriver.Chrome(service=service, options=chrome_options)
+    #wait = WebDriverWait(driver, 20)
+    return driver
+driver = setup_browser()
 
 # def login():
 #     """Logs into Facebook."""
@@ -134,9 +140,7 @@ def scroll_comments_container(n:int):
                 if (commentContainers.length > 0) {
                     var lastContainer = commentContainers[commentContainers.length - 1];
                     lastContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    var rect = lastContainer.getBoundingClientRect();
-                    console.log('lastContainer x:', rect.x, 'y:', rect.y); // Or rect.left, rect.top
-                    console.log('lastContainer width:', rect.width, 'height:', rect.height);
+                    var rect = lastContainer.getBoundingClientRect();xs
                     return [rect.x, rect.y, rect.width, rect.height];
                 }
             """)
@@ -267,9 +271,16 @@ def scrape_post_and_comments():
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
+
+        #post_links=scrape_page_post_links(page_url=PAGE_URL)
+        data={}
+        # for i,pl in enumerate(post_links):
+        #     print("[INFO] scrap post {i+1} ...")
+        #     POST_URL= pl
         scraped_data = scrape_post_and_comments()
+        #     data[f"post_{i+1}"]=scraped_data
         with open("comments.json","w") as f:
             f.write(json.dumps(scraped_data, ensure_ascii=False, indent=2))
         
-        print(f"\nScraping complete. Found {len(scraped_data['comments'])} comments.")
+        print("[INFO] Scraping complete.")
         driver.quit()
