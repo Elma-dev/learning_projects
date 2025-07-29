@@ -83,24 +83,25 @@ def scroll_page_to_load_posts(scroll_count=5):
     #start=0
     
     # for i in tqdm(range(scroll_count)):
-    p_height=0
-    c_height=0
     i=0
     l=[]
+    count_nb_e=0
+    bsh_previous=-1
+    bsh_current=1
     while(True):
         # Scroll down to bottom
         
-        bsh=driver.execute_script(f"window.scrollTo(document.body.scrollHeight * {(i)/50}, document.body.scrollHeight * {(i+2)/50 }); console.log(document.body.scrollHeight); return  document.body.scrollHeight;")
+        bsh_current=driver.execute_script(f"window.scrollTo(document.body.scrollHeight * {(i)/50}, document.body.scrollHeight * {(i+2)/50 }); console.log(document.body.scrollHeight); return  document.body.scrollHeight;")
         #start=last_height
-        l.append(bsh)
+        if bsh_current==bsh_previous:
+            count_nb_e+=1
+            if count_nb_e==50:
+                break
+        bsh_previous = bsh_current
         post_links = extract_post_links(post_links)
         print(f"Found post link: {len(post_links)}")
         # Wait for new posts to load
         i+=1
-        if len(l)>=50 and (len(set(l[-50:]))==1):
-            print(l[-50:])
-            break
-            
         time.sleep(1.5)
         
         
