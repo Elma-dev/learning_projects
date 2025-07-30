@@ -84,7 +84,6 @@ def scroll_page_to_load_posts(scroll_count=5):
     
     # for i in tqdm(range(scroll_count)):
     i=0
-    l=[]
     count_nb_e=0
     bsh_previous=-1
     bsh_current=1
@@ -97,6 +96,8 @@ def scroll_page_to_load_posts(scroll_count=5):
             count_nb_e+=1
             if count_nb_e==50:
                 break
+        else:
+            count_nb_e=0
         bsh_previous = bsh_current
         post_links = extract_post_links(post_links)
         print(f"Found post link: {len(post_links)}")
@@ -144,79 +145,6 @@ def extract_post_links(post_links:set):
     #post_links = set()  # Use set to avoid duplicates
     
     try:
-        # Use JavaScript to find more links
-        # js_links = driver.execute_script("""
-        #     var links = [];
-        #     var allLinks = document.querySelectorAll('a[href]');
-            
-        #     for (var i = 0; i < allLinks.length; i++) {
-        #         var href = allLinks[i].href;
-        #         console.log(href)
-        #         if (href && (
-        #             href.includes('/posts/') && !href.includes('comment_id') || href.includes('/share/p')
-        #             )) {
-        #             links.push(href);
-        #         }
-        #     }
-            
-        #     return [...new Set(links)]; // Remove duplicates
-        # """)
-
-        # js_links = driver.execute_script("""
-        #     var links = [];
-        #     var allLinks = document.querySelectorAll('a[href]');
-        #     var debugInfo = {
-        #         totalLinks: allLinks.length,
-        #         patterns: {},
-        #         foundLinks: []
-        #     };
-            
-        #     console.log('Total links found:', allLinks.length);
-            
-        #     for (var i = 0; i < allLinks.length; i++) {
-        #         var href = allLinks[i].href;
-                
-        #         // Debug: Track different URL patterns
-        #         if (href) {
-        #             if (href.includes('/posts/')) debugInfo.patterns.posts = (debugInfo.patterns.posts || 0) + 1;
-        #             if (href.includes('/share/p/')) debugInfo.patterns.shareP = (debugInfo.patterns.shareP || 0) + 1;
-        #             if (href.includes('story_fbid')) debugInfo.patterns.storyFbid = (debugInfo.patterns.storyFbid || 0) + 1;
-        #             if (href.includes('/permalink/')) debugInfo.patterns.permalink = (debugInfo.patterns.permalink || 0) + 1;
-        #             if (href.includes('/photo/')) debugInfo.patterns.photo = (debugInfo.patterns.photo || 0) + 1;
-        #             if (href.includes('/videos/')) debugInfo.patterns.videos = (debugInfo.patterns.videos || 0) + 1;
-        #         }
-                
-        #         // Updated patterns for current Facebook URLs
-        #         if (href && (
-        #             // Standard post URLs
-        #             (href.includes('/posts/') && !href.includes('comment_id') && !href.includes('reply_comment_id')) ||
-        #             // Share URLs
-        #             href.includes('/share/p/') ||
-        #             // Story URLs
-        #             href.includes('story_fbid=') ||
-        #             // Permalink URLs
-        #             href.includes('/permalink/') ||
-        #             // Photo URLs that are posts
-        #             (href.includes('/photo/') && !href.includes('comment_id')) ||
-        #             // Video URLs that are posts
-        #             (href.includes('/videos/') && !href.includes('comment_id')) ||
-        #             // New Facebook URL patterns
-        #             href.match(/facebook\\.com\\/[^\/]+\\/posts\\/\\d+/) ||
-        #             // Reel URLs
-        #             href.includes('/reel/')
-        #         )) {
-        #             links.push(href);
-        #             debugInfo.foundLinks.push(href);
-        #             console.log('Found post URL:', href);
-        #         }
-        #     }
-            
-        #     console.log('Debug info:', debugInfo);
-        #     return {
-        #         links: [...new Set(links)],
-        #         debug: debugInfo
-        #     };
-        # """)
         js_script = """
             const anchors = Array.from(document.querySelectorAll("a[href]"));
             const postRegexes = [

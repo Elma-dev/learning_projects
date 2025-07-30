@@ -11,11 +11,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from tqdm import tqdm
 import json
+
+from utils import open_chrome
 #from links import scrape_page_post_links
 
 
 PAGE_URL = "https://www.facebook.com/jafiklblan20"
-POST_URL = "https://www.facebook.com/jafiklblan20/posts/pfbid02JCCPHznZf1AbswS5nkanBYakPWtzDNwurtCBXdnSEFLNNKoZS9Rvw2z5NZFHBcCl"
+POST_URL = "https://www.facebook.com/ridouane.erramdani/posts/pfbid02bqZ7zNPZNpJsn69BgGrWsmUx8cfLBeYfTzE4UJYpyhGog88hzykBHRWof7qQb9jhl"
 
 # --- SETUP THE BROWSER ---
 def setup_browser(head_mode=False):
@@ -41,7 +43,7 @@ def setup_browser(head_mode=False):
     #driver = webdriver.Chrome(service=service, options=chrome_options)
     #wait = WebDriverWait(driver, 20)
     return driver
-driver = setup_browser()
+driver = open_chrome()
 
 # def login():
 #     """Logs into Facebook."""
@@ -123,14 +125,9 @@ def get_comment_count():
 def scroll_comments_container(n:int):
     """Scrolls within the comments section to load more comments."""
     print("Scrolling to load all comments...")
-    
-    # First scroll the main page to ensure comments are visible
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.3);")
-    time.sleep(2)
-    
     current_coord=[]
     previous_coord=None
-    
+    comments=set()
     while current_coord!=previous_coord:
         previous_coord=current_coord
         # Also try scrolling within potential comment containers
@@ -140,14 +137,15 @@ def scroll_comments_container(n:int):
                 if (commentContainers.length > 0) {
                     var lastContainer = commentContainers[commentContainers.length - 1];
                     lastContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    var rect = lastContainer.getBoundingClientRect();xs
+                    var rect = lastContainer.getBoundingClientRect();
                     return [rect.x, rect.y, rect.width, rect.height];
                 }
             """)
-        except Exception:
+        except Exception as e:
+            print(e)
             pass
-        
-        time.sleep(1.5)
+        time.sleep(2)
+    return comments
 
 
 def scrape_replies(parent_comment_element):
@@ -186,6 +184,44 @@ def scrape_replies(parent_comment_element):
         print(f"  Error while trying to find reply elements: {e}")
     return replies_data
 
+
+def scrap_comments():
+    comments_data = []
+    print("\n--- COMMENTS ---")
+    try:
+        comment_elements = driver.find_elements(By.XPATH, "//div[@role='article']")
+        print(f"[INFO] number of comments {len(comment_elements)}")
+        for i, comment in enumerate(tqdm(comment_elements)):
+            if i==0:
+                continue
+            try:
+                comment_text_elements = comment.find_elements(By.XPATH, ".//div[@dir='auto' and (contains(@style,'text-align: start;') or not(@style))]") 
+
+                #commenter_name = commenter_name_element.text
+                comment_text = [comment_text_element.get_attribute('innerText') for comment_text_element in comment_text_elements ]
+                # Filter out empty or irrelevant tex
+                if comment_text:
+                    comment= " ".join(comment_text)
+                    comments_data.append(comment)
+
+            except NoSuchElementException as e:
+                print(f"[{i}] Could not extract commenter name or text for a comment due to: {e}. Skipping this comment.")
+                continue
+    except NoSuchElementException:
+        print("Could not find comment elements. Selectors might be outdated.")
+    print(len(comments_data))
+    return comments_data
+
+def scrap_main_post():
+    post_text = ""
+    try:
+        post_element = driver.find_element(By.CSS_SELECTOR, "div[data-ad-preview='message']")
+        post_text = post_element.text
+    except NoSuchElementException:
+        print("Could not find the main post text element. Selector might be outdated.")
+    return post_text
+
+
 def scrape_post_and_comments():
     """Navigates to the post, scrolls to load comments, and scrapes data."""
     print(f"Navigating to post: {POST_URL}")
@@ -193,80 +229,53 @@ def scrape_post_and_comments():
     time.sleep(5) # Allow page to load
 
     # --- SCROLL TO LOAD COMMENTS ---
-    #number_of_comments = get_comment_count()
+    post_text = scrap_main_post()
     scroll_comments_container(10)
+    comments=scrap_comments()
     # --- SCRAPE THE MAIN POST ---
-    post_text = ""
-    try:
-        post_element = driver.find_element(By.CSS_SELECTOR, "div[data-ad-preview='message']")
-        post_text = post_element.text
-    except NoSuchElementException:
-        print("Could not find the main post text element. Selector might be outdated.")
 
-    # --- SCRAPE THE COMMENTS ---
-    comments_data = []
-    print("\n--- COMMENTS ---")
-    try:
-        # This selector targets comment blocks. It is also FRAGILE.
-        comment_elements = driver.find_elements(By.XPATH, "//div[@role='article']")
-        print(f"[INFO] number of comments {len(comment_elements)}")
-        for i, comment in enumerate(tqdm(comment_elements)):
-            if i==0:
-                continue
-            try:
-                # Extracting commenter name and comment text
-                # These child selectors are also extremely fragile
-                commenter_name_element = comment.find_element(By.XPATH, ".//span[contains(@class, 'x193iq5w') and @dir='auto']")
-                comment_text_elements = comment.find_elements(By.XPATH, ".//div[@dir='auto' and (contains(@style,'text-align: start;') or not(@style))]") 
+    # # --- SCRAPE THE COMMENTS ---
+    # comments_data = []
+    # print("\n--- COMMENTS ---")
+    # try:
+    #     # This selector targets comment blocks. It is also FRAGILE.
+    #     comment_elements = driver.find_elements(By.XPATH, "//div[@role='article']")
+    #     print(f"[INFO] number of comments {len(comment_elements)}")
+    #     for i, comment in enumerate(tqdm(comment_elements)):
+    #         if i==0:
+    #             continue
+    #         try:
+    #             # Extracting commenter name and comment text
+    #             # These child selectors are also extremely fragile
+    #             #commenter_name_element = comment.find_element(By.XPATH, ".//span[contains(@class, 'x193iq5w') and @dir='auto']")
+    #             comment_text_elements = comment.find_elements(By.XPATH, ".//div[@dir='auto' and (contains(@style,'text-align: start;') or not(@style))]") 
 
-                commenter_name = commenter_name_element.text
-                comment_text = [comment_text_element.get_attribute('innerText') for comment_text_element in comment_text_elements ]
-                # Filter out empty or irrelevant text
-                if commenter_name and comment_text:
-                    comment_info = {
-                        "author": commenter_name,
-                        "text": " ".join(comment_text),
-                        "replies": [] # Initialize replies list for this comment
-                    }
+    #             #commenter_name = commenter_name_element.text
+    #             comment_text = [comment_text_element.get_attribute('innerText') for comment_text_element in comment_text_elements ]
+    #             # Filter out empty or irrelevant text
+    #             comment_info=None
+    #             if comment_text:
+    #                 comment_info = {
+    #                     "text": " ".join(comment_text),
+    #                     "replies": [] # Initialize replies list for this comment
+    #                 }
                     
-                    #print(f"Author: {commenter_name}\nComment: {comment_text}\n---")
+    #                 #print(f"Author: {commenter_name}\nComment: {comment_text}\n---")
 
-            except NoSuchElementException as e:
-                print(f"[{i}] Could not extract commenter name or text for a comment due to: {e}. Skipping this comment.")
-                # You might want to print more info here, e.g., the outerHTML of the 'comment' element:
-                # print(f"Failed comment HTML:\n{comment.get_attribute('outerHTML')}")
-                continue
+    #         except NoSuchElementException as e:
+    #             print(f"[{i}] Could not extract commenter name or text for a comment due to: {e}. Skipping this comment.")
+    #             # You might want to print more info here, e.g., the outerHTML of the 'comment' element:
+    #             # print(f"Failed comment HTML:\n{comment.get_attribute('outerHTML')}")
+    #             continue
     
-            # --- Handle Replies ---
-            # # --- Handle Replies ---
-            # try:
-            #     # Find and click the "View replies" button if it exists
-            #     # Targeting "View all N replies" text as seen in the image
-            #     view_replies_button = WebDriverWait(comment, 5).until( # Increased wait to 5 seconds for button to appear
-            #         EC.element_to_be_clickable((By.XPATH, 
-            #             ".//div[@role='button' and .//span[contains(@class, 'x193iq5w') and contains(text(), 'View all') and contains(text(), 'replies')]]"
-            #         ))
-            #     )
-                
-            #     if view_replies_button.is_displayed():
-            #         print(f"  Clicking '{view_replies_button.text}' button for comment {i+1}...") # Print exact button text
-            #         view_replies_button.click()
-            #         time.sleep(3) # Give time for replies to load
-                    
-            #         # Scrape the newly loaded replies
-            #         replies = scrape_replies(comment)
-            #         comment_info["replies"].extend(replies)
-
-            # except TimeoutException:
-            #     print(f"  No 'View all replies' button found or clickable for comment {i+1} within timeout.")
-            # except Exception as e: # Catch any other general exceptions for reply button interaction
-            #     print(f"  An unexpected error occurred while trying to click replies button for comment {i+1}: {e}")
-            if comment_info:
-                comments_data.append(comment_info)
-    except NoSuchElementException:
-        print("Could not find comment elements. Selectors might be outdated.")
+            
+            
+    #         if comment_info:
+    #             comments_data.append(comment_info)
+    # except NoSuchElementException:
+    #     print("Could not find comment elements. Selectors might be outdated.")
     
-    return {"post_text": post_text, "comments": comments_data}
+    return {"post_text": post_text, "comments": list(set(comments))}
 
 
 # --- MAIN EXECUTION ---
