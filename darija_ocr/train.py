@@ -12,7 +12,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-prompt=""
+prompt = ("Below is the image of one page of a document written in arabic."
+        "Just return the plain text representation of this document as if you were reading it naturally. Do not hallucinate.")
 def convert_to_conversation(sample):
     global prompt
     conversation = [
