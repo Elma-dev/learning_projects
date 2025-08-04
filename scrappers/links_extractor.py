@@ -156,4 +156,4 @@ class FacebookPostLinkExtractor():
 
 if __name__=="__main__":
     facebook_scraper = FacebookPostLinkExtractor()
-    facebook_scraper.scrape_page_post_links("https://www.facebook.com/ridouane.erramdani",number_posts=None)
+    facebook_scraper.scrape_page_post_links("https://www.facebook.com/ridouane.erramdani",number_posts=1000,save_path="post_links.json")
