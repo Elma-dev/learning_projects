@@ -1,0 +1,6 @@
+wandb
+tqdm
+unsloth
+transformers
+datasets
+python-dotenv
