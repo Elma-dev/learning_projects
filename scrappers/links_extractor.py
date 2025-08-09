@@ -14,6 +14,7 @@ class FacebookPostLinkExtractor():
     def __init__(self):
         self.driver = self.open_chrome()
         self.post_links = set()
+        self.page_id = None
 
     def open_chrome(self):
         chrome_options= ChromeOptions()
@@ -86,7 +87,7 @@ class FacebookPostLinkExtractor():
 
                 for (const a of anchors) {
                     const href = a.href;
-                    if (!href || !href.includes("facebook.com") || !href.includes("ridouane.erramdani")) continue;
+                    if (!href || !href.includes("facebook.com") || !href.includes('"""+self.page_id+"""')) continue;
 
                     for (const regex of postRegexes) {
                         if (regex.test(href)) {
@@ -135,6 +136,7 @@ class FacebookPostLinkExtractor():
     def scrape_page_post_links(self,page_url,number_posts=None,save_path="facebook_post_links.json"):
         """Main function to scrape post links from a Facebook page."""
         print(f"{GREEN}[INFO] Navigating to page: {page_url}{RESET}")
+        self.page_id = page_url.split("/")[-1]
         self.driver.get(page_url)
         time.sleep(5)
         # Scroll to load more posts
@@ -156,4 +158,4 @@ class FacebookPostLinkExtractor():
 
 if __name__=="__main__":
     facebook_scraper = FacebookPostLinkExtractor()
-    facebook_scraper.scrape_page_post_links("https://www.facebook.com/ridouane.erramdani",number_posts=1000,save_path="post_links.json")
+    facebook_scraper.scrape_page_post_links("https://www.facebook.com/BarcaMoroccanFans",number_posts=10,save_path="post_links.json")

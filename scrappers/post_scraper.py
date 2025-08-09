@@ -41,7 +41,7 @@ class FacebookPostScraper():
             except Exception as e:
                 print(f"{RED}[Error]: {e}{RESET}")
                 pass
-            time.sleep(2)
+            time.sleep(3)
     
     def scrap_comments(self):
         try:
