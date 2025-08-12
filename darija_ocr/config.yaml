@@ -1,0 +1,72 @@
+model:
+  name: unsloth/gemma-3n-E4B-it
+  device_map: auto
+  load_in_4bit: true
+  use_gradient_checkpointing: unsloth
+
+dataset:
+  name: atlasia/atlasOCR-data
+  train_split: train
+  validation_split: validation
+  prompt: |
+    Below is the image of one page of a document written in arabic. Just return the plain text representation of this document as if you were reading it naturally. Do not hallucinate.
+
+lora:
+  enabled: false
+  finetune_vision_layers: true
+  finetune_language_layers: true
+  finetune_attention_modules: true
+  finetune_mlp_modules: true
+  r: 16
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  random_state: 7
+  use_rslora: false
+  loftq_config: null
+  target_modules: all-linear
+  modules_to_save:
+    - lm_head
+    - embed_tokens
+
+training:
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 1
+  warmup_ratio: 0.03
+  num_train_epochs: 1
+  learning_rate: 0.0002
+  fp16: null   # leave null to auto-set based on bf16 support
+  bf16: null   # leave null to auto-set based on bf16 support
+  logging_steps: 1
+  optim: adamw_torch_fused
+  weight_decay: 0.01
+  lr_scheduler_type: cosine
+  seed: 7
+  output_dir: outputs
+  overwrite_output_dir: true
+  save_total_limit: 1
+  report_to: wandb
+  push_to_hub: true
+  max_grad_norm: null
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  eval_strategy: steps
+  save_strategy: steps
+  eval_steps: 0.1
+  save_steps: 0.1
+  remove_unused_columns: false
+  dataset_text_field: ""
+  dataset_kwargs:
+    skip_prepare_dataset: true
+  dataset_num_proc: 4
+  max_length: 2048
+
+wandb:
+  project: ocr-v2
+  name: experiment-gemma
+
+hub:
+  enabled: true
+  repo: abdeljalilELmajjodi/darija_ocr_gemma_E4B_it
+  private: true

@@ -4,3 +4,4 @@ unsloth
 transformers
 datasets
 python-dotenv
+pyyaml
