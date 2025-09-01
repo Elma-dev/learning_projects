@@ -206,4 +206,10 @@ Each voice agent architecture — Classic, Audio LLM, and Speech-to-Speech — o
 Designing and implementing an effective voice agent is a multifaceted challenge, demanding rigorous testing, performance benchmarking, and a deep understanding of these architectural paradigms and best practices. By carefully considering LLM and TTS latency, incorporating robust noise cancellation and turn detection, and designing for seamless interruption handling, you can build conversational AI that feels natural, responsive, and truly intelligent. The journey into advanced voice AI is exciting, and with the right approach, you can create experiences that redefine human-computer interaction.
 
 ---
+#### References:
 
+- [Nvidia docs](https://docs.nvidia.com/nim/benchmarking/llm/latest/metrics.html)
+- [HuggingFace Models](https://huggingface.co/models)
+- [FastRTC Blog](https://huggingface.co/blog/fastrtc)
+- [Pipecat](https://www.pipecat.ai/)
+- [ArtificialAnalysis](https://artificialanalysis.ai/leaderboards/models?open_weights=proprietary&frontier_models=frontier)
